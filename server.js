@@ -1,26 +1,21 @@
-// server.js
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const connectDB = require('./config/db');
 
 const app = express();
 
-// Connexion à MongoDB
 connectDB();
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Route simple de test
-app.get('/', (req, res) => {
-  res.send('API Gestion de tâches - OK');
-});
+const taskRoutes = require('./routes/tasks');
+app.use('/tasks', taskRoutes);
 
-// TODO: routes /tasks viendront ici
-// const taskRoutes = require('./routes/tasks');
-// app.use('/tasks', taskRoutes);
+// Servir le frontend
+app.use(express.static(path.join(__dirname, 'public')));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<body>
+<button onclick="addTask()">Ajouter une tâche</button>
+
+<script>
+async function addTask() {
+  const response = await fetch('http://localhost:3000/tasks', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      title: "Test depuis navigateur",
+      description: "Ajout d'une tâche via fetch",
+      priority: "moyenne"
+    })
+  });
+
+  const data = await response.json();
+  console.log("Tâche créée :", data);
+}
+</script>
+</body>
+</html>
