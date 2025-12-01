@@ -48,7 +48,28 @@ taskForm.addEventListener('submit', async (e) => {
 // Charger les tâches depuis l’API
 async function loadTasks() {
   try {
-    const res = await fetch(API_URL);
+    // Récupérer les valeurs des filtres (si les éléments existent)
+    const statusEl = document.getElementById('filter-status');
+    const priorityEl = document.getElementById('filter-priority');
+    const searchEl = document.getElementById('filter-search');
+    const sortEl = document.getElementById('filter-sort');
+
+    const status = statusEl ? statusEl.value : '';
+    const priority = priorityEl ? priorityEl.value : '';
+    const search = searchEl ? searchEl.value : '';
+    const sort = sortEl ? sortEl.value : '';
+
+    const params = new URLSearchParams();
+    if (status) params.append('status', status);
+    if (priority) params.append('priority', priority);
+    if (search) params.append('search', search);
+    if (sort) params.append('sort', sort);
+
+    const url = params.toString()
+      ? `${API_URL}?${params.toString()}`
+      : API_URL;
+
+    const res = await fetch(url);
     const tasks = await res.json();
     renderTasks(tasks);
   } catch (error) {
@@ -56,6 +77,11 @@ async function loadTasks() {
     tasksContainer.innerHTML = '<div class="empty">Erreur de chargement des tâches.</div>';
   }
 }
+const filterApplyBtn = document.getElementById('filter-apply');
+if (filterApplyBtn) {
+  filterApplyBtn.addEventListener('click', loadTasks);
+}
+
 
 function renderTasks(tasks) {
   if (!tasks.length) {

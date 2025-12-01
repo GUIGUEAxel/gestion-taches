@@ -3,17 +3,42 @@ const express = require('express');
 const router = express.Router();
 const Task = require('../models/Task');
 
-//  GET /tasks : récupérer toutes les tâches
+// GET /tasks : récupérer toutes les tâches avec filtres + tri + recherche
 router.get('/', async (req, res) => {
   try {
-    const tasks = await Task.find().sort({ createdAt: -1 });
+    const { status, priority, category, search, sort } = req.query;
+
+    let filter = {};
+
+    if (status) filter.status = status;
+    if (priority) filter.priority = priority;
+    if (category) filter.category = category;
+
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    let sortOption = {};
+    if (sort) {
+      // sort = "dueDate" ou "-dueDate"
+      const field = sort.replace('-', '');
+      const direction = sort.startsWith('-') ? -1 : 1;
+      sortOption[field] = direction;
+    } else {
+      sortOption = { createdAt: -1 }; // par défaut : plus récentes
+    }
+
+    const tasks = await Task.find(filter).sort(sortOption);
     res.json(tasks);
   } catch (err) {
     res.status(500).json({ message: 'Erreur serveur', error: err.message });
   }
 });
 
-//  GET /tasks/:id : récupérer une tâche par id
+// GET /tasks/:id : récupérer une tâche par id
 router.get('/:id', async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
@@ -26,45 +51,7 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// GET /tasks : filtres + tri + recherche
-router.get('/', async (req, res) => {
-  try {
-    const { status, priority, category, search, sort } = req.query;
-
-    // Objet de filtrage
-    let filter = {};
-
-    if (status) filter.status = status;
-    if (priority) filter.priority = priority;
-    if (category) filter.category = category;
-
-    // Recherche textuelle (titre + description)
-    if (search) {
-      filter.$or = [
-        { title: { $regex: search, $options: 'i' } },
-        { description: { $regex: search, $options: 'i' } }
-      ];
-    }
-
-    // Tri dynamique
-    let sortOption = {};
-    if (sort) {
-      sortOption[sort.replace('-', '')] = sort.startsWith('-') ? -1 : 1;
-    } else {
-      sortOption = { createdAt: -1 }; // tri par défaut : tâches récentes
-    }
-
-    const tasks = await Task.find(filter).sort(sortOption);
-
-    res.json(tasks);
-
-  } catch (err) {
-    res.status(500).json({ message: 'Erreur serveur', error: err.message });
-  }
-});
-
-
-//  POST /tasks : créer une tâche
+// POST /tasks : créer une tâche
 router.post('/', async (req, res) => {
   try {
     const task = new Task(req.body);
@@ -75,7 +62,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-//  PUT /tasks/:id : modifier une tâche
+// PUT /tasks/:id : modifier une tâche
 router.put('/:id', async (req, res) => {
   try {
     const updated = await Task.findByIdAndUpdate(
@@ -92,7 +79,7 @@ router.put('/:id', async (req, res) => {
   }
 });
 
-//  DELETE /tasks/:id : supprimer une tâche
+// DELETE /tasks/:id : supprimer une tâche
 router.delete('/:id', async (req, res) => {
   try {
     const deleted = await Task.findByIdAndDelete(req.params.id);
@@ -217,4 +204,5 @@ router.delete('/:id/comments/:commentId', async (req, res) => {
     res.status(500).json({ message: 'Erreur serveur', error: err.message });
   }
 });
+
 module.exports = router;
